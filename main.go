@@ -1,13 +1,25 @@
 package main
 
 import (
-	"fmt"
 	"github.com/codegangsta/cli"
 	"os"
+	"path"
 )
 
+var (
+	projectRoot string
+	goPath      = os.Getenv("GOPATH")
+)
+
+func init() {
+	if goPath == "" {
+		projectRoot = "."
+	} else {
+		projectRoot = path.Join(goPath, "src", "github.com", "darthlukan", "progeny")
+	}
+}
+
 func main() {
-	fmt.Printf("Hello, World!\n")
 	app := cli.NewApp()
 	app.Name = "Progeny"
 	app.Author = "Brian Tomlinson"
@@ -29,6 +41,21 @@ func main() {
 			Name:  "license, L",
 			Value: "gpl3",
 			Usage: "Project license",
+		},
+		cli.StringFlag{
+			Name:  "dir, d",
+			Value: "$GOPATH",
+			Usage: "Project directory",
+		},
+		cli.StringFlag{
+			Name:  "authorname, a",
+			Value: "Your name here",
+			Usage: "Your name",
+		},
+		cli.StringFlag{
+			Name:  "email, e",
+			Value: "you@youremail.com",
+			Usage: "Your email address",
 		},
 	}
 	app.Run(os.Args)
