@@ -11,6 +11,30 @@ var (
 	goPath      = os.Getenv("GOPATH")
 )
 
+func python(c *cli.Context) error {
+	// TODO
+}
+
+func golang(c *cli.Context) error {
+	// TODO
+}
+
+func readme(c *cli.Context) error {
+	// TODO
+}
+
+func license(c *cli.Context) error {
+	// TODO
+}
+
+func moveFiles(from, to string) error {
+	// TODO
+}
+
+func replaceNames(names []string, file string) error {
+	// TODO
+}
+
 func init() {
 	if goPath == "" {
 		projectRoot = "."
@@ -57,6 +81,9 @@ func main() {
 			Value: "you@youremail.com",
 			Usage: "Your email address",
 		},
+	}
+	app.Action = func(c *cli.Context) {
+		// TODO
 	}
 	app.Run(os.Args)
 }
