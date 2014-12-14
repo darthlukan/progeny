@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
 	"github.com/codegangsta/cli"
 	"os"
 	"path"
+	"strings"
 )
 
 var (
@@ -11,28 +14,100 @@ var (
 	goPath      = os.Getenv("GOPATH")
 )
 
-func python(c *cli.Context) error {
-	// TODO
+type Project struct {
+	AppName     string
+	AuthorName  string
+	AuthorEmail string
+	GitHubUser  string
+	Language    string
+	License     string
+	ProjectDir  string
 }
 
-func golang(c *cli.Context) error {
+func (p *Project) PythonHandler(c *cli.Context) error {
 	// TODO
+	return nil
 }
 
-func readme(c *cli.Context) error {
+func (p *Project) GolangHandler(c *cli.Context) error {
 	// TODO
+	return nil
 }
 
-func license(c *cli.Context) error {
+func (p *Project) ReadmeHandler(c *cli.Context) error {
 	// TODO
+	return nil
 }
 
-func moveFiles(from, to string) error {
+func (p *Project) LicenseHandler(c *cli.Context) error {
 	// TODO
+	return nil
 }
 
-func replaceNames(names []string, file string) error {
+func (p *Project) CreateProjectDir(dirname string) error {
 	// TODO
+	return nil
+}
+
+func (p *Project) MoveFiles(from, to string) error {
+	// TODO
+	return nil
+}
+
+func (p *Project) GoPathHandler() error {
+	// TODO
+	appDir := path.Join(goPath, "src", "github.com", p.GitHubUser, p.AppName)
+	os.Stdout.WriteString(appDir)
+	return nil
+}
+
+func (p *Project) readLines(filePath string) ([]string, error) {
+	var lines []string
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	return lines, scanner.Err()
+}
+
+func (p *Project) writeLines(lines []string, destPath string) error {
+	file, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	for _, line := range lines {
+		fmt.Fprintln(writer, line)
+	}
+	return writer.Flush()
+}
+
+func (p *Project) ReplaceReadmeNames(readme []string) error {
+	var appName, author, email, license string
+	for _, line := range readme {
+		if strings.Contains(line, "{{APP_NAME}}") {
+			appName = strings.Replace(line, "{{APP_NAME}}", p.AppName, 1)
+		}
+		if strings.Contains(line, "{{AUTHOR}}") {
+			author = strings.Replace(line, "{{AUTHOR}}", p.AuthorName, 1)
+		}
+		if strings.Contains(line, "{{AUTHOR_EMAIL}}") {
+			email = strings.Replace(line, "{{AUTHOR_EMAIL}}", p.AuthorEmail, 1)
+		}
+		if strings.Contains(line, "{{LICENSE}}") {
+			license = strings.Replace(line, "{{LICENSE}}", p.License, 1)
+		}
+		fmt.Printf("line: %v\n, vars: %v, %v, %v, %v\n", line, appName, author, email, license)
+	}
+	return nil
 }
 
 func init() {
@@ -80,6 +155,11 @@ func main() {
 			Name:  "email, e",
 			Value: "you@youremail.com",
 			Usage: "Your email address",
+		},
+		cli.StringFlag{
+			Name:  "github-username, g",
+			Value: "github_username",
+			Usage: "Your GitHub username",
 		},
 	}
 	app.Action = func(c *cli.Context) {
