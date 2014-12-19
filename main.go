@@ -18,6 +18,7 @@ type Project struct {
 	AppName     string
 	AuthorName  string
 	AuthorEmail string
+    VCS         string
 	GitHubUser  string
 	Language    string
 	License     string
