@@ -26,23 +26,28 @@ type Project struct {
 }
 
 func (p *Project) PythonHandler(c *cli.Context) error {
-	// TODO
+    // TODO: Don't forget setup.py!
 	return nil
 }
 
 func (p *Project) GolangHandler(c *cli.Context) error {
-	// TODO
+    // TODO
 	return nil
 }
 
 func (p *Project) ReadmeHandler(c *cli.Context) error {
-	// TODO
+    // TODO: Copy to projectDir and replace name
 	return nil
 }
 
 func (p *Project) LicenseHandler(c *cli.Context) error {
-	// TODO
+    // TODO: Choose License file and copy to projectDir
 	return nil
+}
+
+func (p *Project) VCSHandler(c *cli.Context) error {
+    // TODO: Determine remote via VCS choice
+    return nil
 }
 
 func (p *Project) CreateProjectDir(dirname string) error {
@@ -59,8 +64,8 @@ func (p *Project) CopyFiles(from, to string) error {
 }
 
 func (p *Project) GoPathHandler() error {
-	// TODO
-	appDir := path.Join(goPath, "src", "github.com", p.GitHubUser, p.AppName)
+    // TODO: Handle VCS choice!
+	appDir := path.Join(goPath, "src", p.VCS, p.GitHubUser, p.AppName)
 	os.Stdout.WriteString(appDir)
 	return nil
 }
@@ -112,6 +117,11 @@ func (p *Project) ReplaceReadmeNames(readme []string) error {
 		fmt.Printf("line: %v\n, vars: %v, %v, %v, %v\n", line, appName, author, email, license)
 	}
 	return nil
+}
+
+func CreateProject(c *cli.Context) error {
+    // TODO
+    return nil
 }
 
 func init() {
@@ -167,7 +177,7 @@ func main() {
 		},
 	}
 	app.Action = func(c *cli.Context) {
-		// TODO
+		CreateProject(c)
 	}
 	app.Run(os.Args)
 }
