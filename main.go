@@ -45,13 +45,16 @@ func (p *Project) LicenseHandler(c *cli.Context) error {
 }
 
 func (p *Project) CreateProjectDir(dirname string) error {
-	// TODO
-	return nil
+    return os.MkdirAll(dirname, 0775)
 }
 
-func (p *Project) MoveFiles(from, to string) error {
-	// TODO
-	return nil
+func (p *Project) CopyFiles(from, to string) error {
+    orig_lines, err := p.readLines(from)
+    if err != nil {
+        return err
+    }
+    writeStatus := p.writeLines(orig_lines, to)
+	return writeStatus
 }
 
 func (p *Project) GoPathHandler() error {
