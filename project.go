@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/codegangsta/cli"
 	"os"
-	"path"
 )
 
 type Project struct {
@@ -11,11 +10,10 @@ type Project struct {
 	AuthorName  string
 	AuthorEmail string
 	Description string
-	VCS         string
-	GitHubUser  string
 	Language    string
 	License     string
 	ProjectDir  string
+	Type        string
 }
 
 func (p *Project) PythonHandler(c *cli.Context) error {
@@ -49,7 +47,5 @@ func (p *Project) CreateProjectDir() error {
 
 func (p *Project) GoPathHandler() error {
 	// TODO: Handle VCS choice!
-	appDir := path.Join(goPath, "src", p.VCS, p.GitHubUser, p.AppName)
-	os.Stdout.WriteString(appDir)
 	return nil
 }
