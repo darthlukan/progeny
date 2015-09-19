@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"github.com/codegangsta/cli"
@@ -15,6 +14,8 @@ var (
 	goPath      = os.Getenv("GOPATH")
 )
 
+// CreateProject takes a validated Project type and performs the steps
+// necessary to generate the project layout on disk.
 func CreateProject(p *Project) error {
 	// TODO
 	return nil
@@ -22,16 +23,14 @@ func CreateProject(p *Project) error {
 
 func validateTemplate(c *cli.Context) (*Project, error) {
 	fmt.Printf("Preparing to validate %v \n", c.Args().First())
-	project := new(Project)
-	template, err := os.Open(c.Args().First())
+	template, err := OpenFile(c.Args().First())
 	if err != nil {
 		return nil, err
 	}
-	defer template.Close()
+	project := new(Project)
 
-	scanner := bufio.NewScanner(template)
-	for scanner.Scan() {
-		line := strings.Split(scanner.Text(), "=")
+	for template.Scan() {
+		line := strings.Split(template.Text(), "=")
 		key := strings.TrimSpace(line[0])
 		val := strings.TrimSpace(line[1])
 		if val != "" {
@@ -56,6 +55,9 @@ func validateTemplate(c *cli.Context) (*Project, error) {
 
 	fmt.Printf("Performing template validation check... \n")
 
+	// TODO: This is really bad, there is no way Go is missing a sane way to handle this,
+	// maybe in a loop? Would reflection be too slow? Things to consider: Use a map and then create
+	// the Project struct based off of that.
 	checks := 0
 	if project.AppName != "" {
 		checks++
