@@ -7,7 +7,7 @@
 
 ## Description
 
-> A project generation tool inspired by tools like [Yeoman](http://yeoman.io/) written in Go.
+> A project generation tool inspired by tools like [Yeoman](http://yeoman.io/) written in Python.
 
 
 ## License
