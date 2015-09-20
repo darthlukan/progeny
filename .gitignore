@@ -1,4 +1,5 @@
 .git
 *.json
 *.pyc
+test_template.txt
 
