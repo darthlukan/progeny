@@ -1,9 +1,9 @@
 import sys
 import argparse
+import subprocess
 
 
 _required = ['name', 'language', 'parent']
-
 exit_states = {
     'clean': 0,
     'error': 1
@@ -20,13 +20,15 @@ class Project(object):
     def __init__(self, name, language, parent,
                  type=None, author=None, email=None, license=None, vcs=None):
         self.name = name
-        self.type = type
+        self.type = type if type is not None else 'cli'
         self.license = license
         self.language = language
         self.parent = parent
         self.author = author
         self.email = email
         self.vcs = vcs
+        self._app_base = '{0}/{1}'.format(self.parent, self.name)
+        print(self._app_base)
 
     def __str__(self):
         return self.__unicode__()
@@ -35,6 +37,30 @@ class Project(object):
         return unicode('<Project {0}>'.format(self.name))
 
     def generate(self):
+        errors = []
+        try:
+            footprint = open_file(
+                'footprints/{0}/{1}'.format(self.language, self.type))
+        except IOError as e:
+            print(e.message)
+            return exit(1)
+
+        for line in footprint:
+            print(line)
+            if line.endswith('/'):
+                p = subprocess.Popen(
+                    ['/bin/mkdir', '-p', '{0}/{1}'.format(
+                        self._app_base, line.strip('\n'))], shell=True,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            else:
+                p = subprocess.Popen(
+                    ['/bin/touch', '{0}/{1}'.format(
+                        self._app_base, line.strip('\n'))], shell=True,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = p.communicate()
+            if stdout not in [None, 0, ''] and stderr:
+                errors.append(OSError(stderr))
+        print(errors)
         return
 
 
@@ -174,7 +200,8 @@ def main():
                         help='Generate project based on template file.')
 
     args = parser.parse_args()
-    print(validate_args(args))
+    project = validate_args(args)
+    print(project.generate())
     return exit()
 
 
