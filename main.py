@@ -95,6 +95,11 @@ class Project(object):
                     return True
                 except IOError as e:
                     self._errors.append(e)
+            self._errors.append(RuntimeWarning(
+                '{0} license response not 200.'.format(self.license)))
+        else:
+            self._errors.append(NotImplementedError(
+                '{0} is not currently known by Progeny.'.format(self.license)))
         return False
 
     def generate(self):
@@ -126,7 +131,7 @@ class Project(object):
         if not lsuccess:
             # TODO: Notify? Raise? We appended the error but is this
             # a "raise-worthy" offense?
-            pass
+            print(self._errors[-1])
 
         print(errors)
         return True
