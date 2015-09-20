@@ -4,6 +4,7 @@ import subprocess
 
 
 _required = ['name', 'language', 'parent']
+_error_conditions = [None, '', 0]
 exit_states = {
     'clean': 0,
     'error': 1
@@ -16,56 +17,8 @@ class ValidationError(BaseException):
         '''.format(originator, msg)
 
 
-class Project(object):
-    def __init__(self, name, language, parent,
-                 type=None, author=None, email=None, license=None, vcs=None):
-        self.name = name
-        self.type = type if type is not None else 'cli'
-        self.license = license
-        self.language = language
-        self.parent = parent
-        self.author = author
-        self.email = email
-        self.vcs = vcs
-        self._app_base = '{0}/{1}'.format(self.parent, self.name)
-        print(self._app_base)
-
-    def __str__(self):
-        return self.__unicode__()
-
-    def __unicode__(self):
-        return unicode('<Project {0}>'.format(self.name))
-
-    def generate(self):
-        errors = []
-        try:
-            footprint = open_file(
-                'footprints/{0}/{1}'.format(self.language, self.type))
-        except IOError as e:
-            print(e.message)
-            return exit(1)
-
-        for line in footprint:
-            print(line)
-            if line.endswith('/'):
-                p = subprocess.Popen(
-                    ['/bin/mkdir', '-p', '{0}/{1}'.format(
-                        self._app_base, line.strip('\n'))], shell=True,
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            else:
-                p = subprocess.Popen(
-                    ['/bin/touch', '{0}/{1}'.format(
-                        self._app_base, line.strip('\n'))], shell=True,
-                    stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = p.communicate()
-            if stdout not in [None, 0, ''] and stderr:
-                errors.append(OSError(stderr))
-        print(errors)
-        return
-
-
 def exit(status=None):
-    if status is not None:
+    if status not in _error_conditions:
         state = exit_states['error']
     else:
         state = exit_states['clean']
@@ -80,6 +33,72 @@ def open_file(path):
         return e.message
 
 
+class Project(object):
+    def __init__(self, name, language, parent,
+                 type=None, author=None, email=None, license=None, vcs=None):
+        self.name = name
+        self.type = type if type is not None else 'cli'
+        self.license = license
+        self.language = language
+        self.parent = parent
+        self.author = author
+        self.email = email
+        self.vcs = vcs
+        self._app_base = '{0}/{1}'.format(self.parent, self.name)
+        self._errors = []
+
+    def __str__(self):
+        return self.__unicode__()
+
+    def __unicode__(self):
+        return unicode('<Project {0}>'.format(self.name))
+
+    def _mkdir(self, path):
+        d = subprocess.Popen('mkdir -p {0}'.format(path), shell=True,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = d.communicate()
+        if stderr and stderr not in _error_conditions:
+            self._errors.append(OSError(stderr))
+            return False
+        return True
+
+    def _touch(self, file):
+        f = subprocess.Popen('touch {0}'.format(file), shell=True,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = f.communicate()
+        if stderr and stderr not in _error_conditions:
+            self._errors.append(OSError(stderr))
+            return False
+        return True
+
+    def generate(self):
+        errors = []
+        try:
+            footprint = open_file(
+                'footprints/{0}/{1}'.format(self.language, self.type))
+        except IOError as e:
+            print(e.message)
+            return exit(1)
+
+        success = self._mkdir(self._app_base)
+        if not success:
+            raise self._errors[-1]
+
+        for line in footprint:
+            if line.endswith('/'):
+                dpath = '{0}/{1}'.format(self._app_base, line.strip('\n'))
+                dsuccess = self._mkdir(dpath)
+                if not dsuccess:
+                    raise self._errors[-1]
+            else:
+                fpath = '{0}/{1}'.format(self._app_base, line.strip('\n'))
+                fsuccess = self._touch(fpath)
+                if not fsuccess:
+                    raise self._errors[-1]
+        print(errors)
+        return True
+
+
 def validate_template(template):
     tmpl = open_file(template)
     if isinstance(tmpl, str):
@@ -90,7 +109,7 @@ def validate_template(template):
         l = line.split('=')
         key = l[0].strip().lower()
         val = l[1].strip().lower()
-        if key in _required and (val is None or val == ''):
+        if key in _required and val in _error_conditions:
             raise ValidationError(
                 'Missing required attribute {0}'.format(key), template)
         pre_proj[key] = val
@@ -132,7 +151,7 @@ def validate_template(template):
 def validate_args(args):
     print(args)
     print(args.name)
-    if args.template and args.template != '':
+    if args.template and args.template not in _error_conditions:
         return validate_template(args.template)
 
     for req in _required:
@@ -201,8 +220,11 @@ def main():
 
     args = parser.parse_args()
     project = validate_args(args)
-    print(project.generate())
-    return exit()
+    project_state = project.generate()
+    print(project._errors)
+    if project_state:
+        return exit(0)
+    return exit(1)
 
 
 if __name__ == '__main__':
