@@ -1,10 +1,20 @@
 import sys
 import argparse
+import requests
 import subprocess
 
 
 _required = ['name', 'language', 'parent']
 _error_conditions = [None, '', 0]
+_license_urls = {
+    'gpl2': 'http://www.gnu.org/licenses/gpl-2.0.txt',
+    'gpl3': 'http://www.gnu.org/licenses/gpl-3.0.txt',
+    'agpl3': 'http://www.gnu.org/licenses/agpl-3.0.txt',
+    'lgpl2': 'http://www.gnu.org/licenses/lgpl-2.1.txt',
+    'lgpl3': 'http://www.gnu.org/licenses/lgpl-2.1.txt',
+    'wtfpl': 'http://www.wtfpl.net/txt/copying/'
+}
+
 exit_states = {
     'clean': 0,
     'error': 1
@@ -71,6 +81,22 @@ class Project(object):
             return False
         return True
 
+    def _readme_gen(self):
+        raise NotImplementedError
+
+    def _license_gen(self):
+        if self.license in _license_urls:
+            resp = requests.get(_license_urls[self.license], follow=True)
+            if resp.status_code == 200:
+                try:
+                    license = open('{0}/LICENSE'.format(self._app_base))
+                    license.write(resp.text)
+                    license.close()
+                    return True
+                except IOError as e:
+                    self._errors.append(e)
+        return False
+
     def generate(self):
         errors = []
         try:
@@ -95,6 +121,13 @@ class Project(object):
                 fsuccess = self._touch(fpath)
                 if not fsuccess:
                     raise self._errors[-1]
+
+        lsuccess = self._license_gen()
+        if not lsuccess:
+            # TODO: Notify? Raise? We appended the error but is this
+            # a "raise-worthy" offense?
+            pass
+
         print(errors)
         return True
 
