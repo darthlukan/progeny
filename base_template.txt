@@ -1,0 +1,8 @@
+name = awesomesauce
+type = cli
+language = python
+parent = /home/darthlukan/projects
+license = gpl2
+author = me
+email = me@not.yours
+vcs = git
