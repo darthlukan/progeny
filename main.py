@@ -2,6 +2,14 @@ import sys
 import argparse
 
 
+_required = ['name', 'language', 'parent']
+
+exit_states = {
+    'clean': 0,
+    'error': 1
+}
+
+
 class ValidationError(BaseException):
     def __init__(self, msg, originator):
         self.message = '''{0} failed validation with the following reason: {1}
@@ -9,16 +17,16 @@ class ValidationError(BaseException):
 
 
 class Project(object):
-    def __init__(self, name, language, type, author, email,
-                 license, vcs, **kwargs):
+    def __init__(self, name, language, parent,
+                 type=None, author=None, email=None, license=None, vcs=None):
         self.name = name
         self.type = type
         self.license = license
         self.language = language
+        self.parent = parent
         self.author = author
         self.email = email
         self.vcs = vcs
-        self.additional = kwargs if len(kwargs.keys()) > 0 else None
 
     def __str__(self):
         return self.__unicode__()
@@ -28,12 +36,6 @@ class Project(object):
 
     def generate(self):
         return
-
-
-exit_states = {
-    'clean': 0,
-    'error': 1
-}
 
 
 def exit(status=None):
@@ -62,56 +64,113 @@ def validate_template(template):
         l = line.split('=')
         key = l[0].strip().lower()
         val = l[1].strip().lower()
+        if key in _required and (val is None or val == ''):
+            raise ValidationError(
+                'Missing required attribute {0}'.format(key), template)
         pre_proj[key] = val
 
+    name = pre_proj['name']
+    language = pre_proj['language']
+    parent = pre_proj['parent']
+
+    # TODO: No, seriously, figure out a better way than this.
     try:
-        project = Project(
-            name=pre_proj['name'], type_p=pre_proj['type'],
-            license=pre_proj['license'], author=pre_proj['author'],
-            email=pre_proj['email'], vcs=pre_proj['vcs'])
-    except (KeyError, AttributeError) as e:
-        raise ValidationError(e.message, template)
+        type = pre_proj['type']
+    except KeyError:
+        type = None
 
-    attrs = ['name', 'type', 'license', 'author', 'email']
-    for attr in attrs:
-        a = project.__getattribute__(attr)
-        if a is None or a == '':
-            raise ValidationError('missing required attribute {0}!'.format(
-                attr), template)
+    try:
+        license = pre_proj['license']
+    except KeyError:
+        license = None
 
+    try:
+        vcs = pre_proj['vcs']
+    except KeyError:
+        vcs = None
+
+    try:
+        author = pre_proj['author']
+    except KeyError:
+        author = None
+
+    try:
+        email = pre_proj['email']
+    except KeyError:
+        email = None
+
+    project = Project(name, language, parent, type, author, email, license, vcs)
     return project
 
 
 def validate_args(args):
-    if args.template and args.template[0] != '':
-        return validate_template(args._template[0])
-    return args
+    print(args)
+    print(args.name)
+    if args.template and args.template != '':
+        return validate_template(args.template)
+
+    for req in _required:
+        if not args.__contains__(req):
+            raise ValidationError(
+                'Missing required arg \'{0}\''.format(req), req)
+
+    name = args.name
+    language = args.language
+    parent = args.parent
+
+    # TODO: Make a loop out of this (DRY)
+    try:
+        type = args.type
+    except (AttributeError, IndexError):
+        type = None
+
+    try:
+        license = args.license
+    except (AttributeError, IndexError):
+        license = None
+
+    try:
+        vcs = args.vcs
+    except (AttributeError, IndexError):
+        vcs = None
+
+    try:
+        author = args.author
+    except (AttributeError, IndexError):
+        author = None
+
+    try:
+        email = args.email
+    except (AttributeError, IndexError):
+        email = None
+
+    project = Project(name, language, parent, type, author, email, license, vcs)
+    return project
 
 
 def main():
     parser = argparse.ArgumentParser(
         description='''Generate project directory structures based on templates
         or supplied args.''')
-    parser.add_argument('-n', '--name', nargs=1, type=str, action='store',
-                        dest='name', help='Your app\'s/project\'s name.')
-    parser.add_argument('-a', '--author', nargs=1, type=str, action='store',
+    parser.add_argument('-n', '--name', type=str, action='store', dest='name',
+                        help='Your app\'s/project\'s name.')
+    parser.add_argument('-a', '--author', type=str, action='store',
                         dest='author', help='Your name.')
-    parser.add_argument('-e', '--email', nargs=1, type=str, action='store',
-                        dest='email', help='Your email address.')
-    parser.add_argument('-l', '--license', nargs=1, type=str, action='store',
+    parser.add_argument('-e', '--email', type=str, action='store', dest='email',
+                        help='Your email address.')
+    parser.add_argument('-l', '--license', type=str, action='store',
                         dest='license', help='License shortname e.g. gpl2.')
-    parser.add_argument('-lang', '--language', nargs=1, type=str,
-                        action='store', dest='language',
-                        help='The project language.')
-    parser.add_argument('-t', '--type', nargs=1, type=str, action='store',
-                        dest='type', help='The type of project e.g. cli, web.')
-    parser.add_argument('-vcs', '--version-control-system', nargs=1, type=str,
+    parser.add_argument('-lang', '--language', type=str, action='store',
+                        dest='language', help='The project language.')
+    parser.add_argument('-t', '--type', type=str, action='store', dest='type',
+                        help='The type of project e.g. cli, web.')
+    parser.add_argument('-vcs', '--version-control-system', type=str,
                         action='store', dest='vcs', help='Version Control')
-    parser.add_argument('-p', '--parent-dir', nargs=1, type=str,
-                        action='store', dest='parent',
+    parser.add_argument('-p', '--parent-dir', type=str, action='store',
+                        dest='parent',
                         help='The parent directory e.g. ~/projects.')
-    parser.add_argument('-f', '--template-file', nargs=1, type=str,
-                        action='store', dest='template',
+    parser.add_argument('-f', '--template-file', type=str, action='store',
+                        dest='template',
                         help='Generate project based on template file.')
 
     args = parser.parse_args()
