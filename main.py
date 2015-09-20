@@ -86,10 +86,10 @@ class Project(object):
 
     def _license_gen(self):
         if self.license in _license_urls:
-            resp = requests.get(_license_urls[self.license], follow=True)
+            resp = requests.get(_license_urls[self.license])
             if resp.status_code == 200:
                 try:
-                    license = open('{0}/LICENSE'.format(self._app_base))
+                    license = open('{0}/LICENSE'.format(self._app_base), 'w')
                     license.write(resp.text)
                     license.close()
                     return True
