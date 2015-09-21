@@ -3,7 +3,7 @@ import argparse
 import requests
 import subprocess
 
-
+_footprints = ''
 _required = ['name', 'language', 'parent']
 _error_conditions = [None, '', 0]
 _license_urls = {
@@ -130,8 +130,8 @@ class Project(object):
         return False
 
     def generate(self):
-        errors = []
         try:
+            # TODO: Change me so that I honor config settings
             footprint = open_file(
                 'footprints/{0}/{1}'.format(self.language, self.type))
         except IOError as e:
@@ -143,15 +143,14 @@ class Project(object):
             raise self._errors[-1]
 
         for line in footprint:
-            if line.endswith('/'):
-                dpath = '{0}/{1}'.format(self._app_base, line.strip('\n'))
-                dsuccess = self._mkdir(dpath)
-                if not dsuccess:
-                    raise self._errors[-1]
+            line = line.strip('\n').strip()
+            path = '{0}/{1}'.format(self._app_base, line)
+            if path.endswith('/'):
+                success = self._mkdir(path)
             else:
-                fpath = '{0}/{1}'.format(self._app_base, line.strip('\n'))
-                fsuccess = self._touch(fpath)
-                if not fsuccess:
+                success = self._touch(path)
+
+            if not success:
                     raise self._errors[-1]
 
         lsuccess = self._license_gen()
@@ -164,7 +163,6 @@ class Project(object):
         if not rsuccess:
             print(self._errors[-1])
 
-        print(errors)
         return True
 
 
@@ -260,6 +258,10 @@ def validate_args(args):
 
     project = Project(name, language, parent, type, author, email, license, vcs)
     return project
+
+
+def config():
+    return
 
 
 def main():
