@@ -82,7 +82,34 @@ class Project(object):
         return True
 
     def _readme_gen(self):
-        raise NotImplementedError
+        # TODO: Is this the best way? Probably not. Profile string append
+        # versus template string -> replace to see which is fastest.
+        readme_string = ''
+        readme_string += '# {0}\n\n'.format(self.name)
+        if self.author is not None:
+            readme_string += '> {0} '.format(self.author)
+            if self.email is not None:
+                readme_string += '<{0}>\n\n'.format(self.email)
+            else:
+                readme_string += '\n\n'
+
+        readme_string += '## Description\n\n'
+        readme_string += '> Insert {0} description here.\n\n'.format(self.name)
+        readme_string += '# LICENSE\n\n'
+        if self.license is not None:
+            readme_string += '> {0}, see LICENSE file.'.format(self.license)
+        else:
+            readme_string += '> Currently undecided.'
+
+        try:
+            readme = open('{0}/README.md'.format(self._app_base), 'w')
+            readme.write(readme_string)
+            readme.close()
+            return True
+        except IOError as e:
+            self._errors.append(e)
+
+        return False
 
     def _license_gen(self):
         if self.license in _license_urls:
@@ -131,6 +158,10 @@ class Project(object):
         if not lsuccess:
             # TODO: Notify? Raise? We appended the error but is this
             # a "raise-worthy" offense?
+            print(self._errors[-1])
+
+        rsuccess = self._readme_gen()
+        if not rsuccess:
             print(self._errors[-1])
 
         print(errors)
