@@ -1,9 +1,29 @@
+import os
 import sys
 import argparse
 import requests
+import platform
 import subprocess
+if 3 in platform.python_version_tuple()[0]:
+    import configparser
+else:
+    import ConfigParser as configparser
 
-_footprints = ''
+
+def _open_config_file(HOME):
+    config = configparser.SafeConfigParser()
+    try:
+        config.read('{0}/.config/progeny/progenyrc'.format(HOME))
+    except (IOError, configparser.ParsingError):
+        try:
+            config.read('{0}/.progenyrc'.format(HOME))
+        except (IOError, configparser.ParsingError):
+            config = None
+    return config
+
+
+__HOME = os.getenv('HOME')
+__config = _open_config_file(__HOME)
 _required = ['name', 'language', 'parent']
 _error_conditions = [None, '', 0]
 _license_urls = {
@@ -14,17 +34,14 @@ _license_urls = {
     'lgpl3': 'http://www.gnu.org/licenses/lgpl-2.1.txt',
     'wtfpl': 'http://www.wtfpl.net/txt/copying/'
 }
-
+_footprints_lookup_dirs = {
+    'default': '/usr/share/progeny/footprints',
+    'alternate': '{0}/.config/progeny/footprints'.format(__HOME),
+}
 exit_states = {
     'clean': 0,
     'error': 1
 }
-
-
-class ValidationError(BaseException):
-    def __init__(self, msg, originator):
-        self.message = '''{0} failed validation with the following reason: {1}
-        '''.format(originator, msg)
 
 
 def exit(status=None):
@@ -36,11 +53,19 @@ def exit(status=None):
     return sys.exit(state)
 
 
-def open_file(path):
+def open_file(path, mode=None):
     try:
-        return open(path)
+        if mode and isinstance(mode, str):
+            return open(path, mode)
+        return open(path, 'r')
     except IOError as e:
         return e.message
+
+
+class ValidationError(BaseException):
+    def __init__(self, msg, originator):
+        self.message = '''{0} failed validation with the following reason: {1}
+        '''.format(originator, msg)
 
 
 class Project(object):
@@ -258,10 +283,6 @@ def validate_args(args):
 
     project = Project(name, language, parent, type, author, email, license, vcs)
     return project
-
-
-def config():
-    return
 
 
 def main():
