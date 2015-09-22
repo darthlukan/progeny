@@ -1,10 +1,15 @@
+# IMPORTANT!
+# All options in this config file can be overridden via command line
+# arguments EXCEPT for "footprints" in the "Paths" section
+
+
 # Paths:
 # Acceptable options for this section:
 #
 # footprints: Absolute path to custom footprints directory
 # parent: Absolute path to where you keep your projects
 
-[paths]
+[Paths]
 #
 # Defining "footprints"
 #
@@ -38,7 +43,7 @@ parent: $HOME/projects
 # language
 # license
 # type
-[project defaults]
+[Project Defaults]
 
 # Your name. What you call yourself or wish others called you. This gets populated
 # in README.md files automatically.
