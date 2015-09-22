@@ -1,0 +1,76 @@
+# Paths:
+# Acceptable options for this section:
+#
+# footprints: Absolute path to custom footprints directory
+# parent: Absolute path to where you keep your projects
+
+[paths]
+#
+# Defining "footprints"
+#
+# "footprints" refers
+# to the path where you store custom project footprints, Progeny will look
+# here first and if the desired language/type combo is not found, will revert
+# to the defaults.
+footprints: $HOME/.config/progeny/footprints
+
+#
+# Defining "parent"
+#
+# "parent" refers to the default parent directory of your projects. If
+# "parent is not defined here, Progeny will expect to be called with the '-p'
+# argument else it will raise an error. When a "parent" is supplied, Progeny
+# will append the app_name (supplied via command line argument '-n' or '--name')
+# to the "parent" path, 
+#
+# e.g: parent: /home/user/projects
+# $ progeny -n app_name
+#
+# results in: /home/user/projects/app_name
+parent: $HOME/projects
+
+#
+# Project Defaults:
+# Acceptable options for this section:
+#
+# author
+# email
+# language
+# license
+# type
+[project defaults]
+
+# Your name. What you call yourself or wish others called you. This gets populated
+# in README.md files automatically.
+author: Me
+
+# Your preferred email address for contact. This gets populated in README.md
+# files automatically.
+email: mine@not.yours
+
+# The programming/scripting language for which you primarily create projects.
+# Valid values are those which correspond to either the default footprints,
+# your custom footprints, or both.  
+#
+# Footprints are excepted to be store in 
+# parent -> language -> type hierarchies, e.g: ~/projects/python/cli
+# 
+# If you've defined "footprints" in the "Paths" section above and decided to name a
+# language "lol++" in that path, and that's the primary language you work in, then put
+# "lol++" in this field (without the quotes).
+language: go
+
+# The type of project for which you primarily create projects.
+# As above, the "type" of project is relevant to the "footprints" path set
+# in the "Paths" section and Progeny expects footprints to be in a 
+# parent -> language -> type hierarchy (see the example in the language section).
+#
+# If you've defined "footprints" in the "Paths" section above and decided to name
+# a type "derp" and that's the type of project you primarily work in, put "derp" here
+# (without the quotes).
+type: cli
+
+# Your preferred license. Progeny will attempt to download the license
+# in order to populate the LICENSE file and will also auto-populate README.md
+# files' "license" section with this value.
+license: gpl2
