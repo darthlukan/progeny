@@ -4,7 +4,7 @@ import argparse
 import requests
 import platform
 import subprocess
-if 3 in platform.python_version_tuple()[0]:
+if int(platform.python_version_tuple()[0]) == 3:
     import configparser
 else:
     import ConfigParser as configparser
@@ -69,7 +69,7 @@ class ValidationError(BaseException):
 
 
 class Project(object):
-    def __init__(self, name, language, parent,
+    def __init__(self, name, language, parent, footprint=None, config=None,
                  type=None, author=None, email=None, license=None, vcs=None):
         self.name = name
         self.type = type if type is not None else 'cli'
@@ -80,6 +80,11 @@ class Project(object):
         self.email = email
         self.vcs = vcs
         self._app_base = '{0}/{1}'.format(self.parent, self.name)
+        self._footprint = footprint
+        try:
+            self._footprints_path = config.get('Paths', 'footprints')
+        except (configparser.NoSectionError, configparser.NoOptionError):
+            self._footprints_path = None
         self._errors = []
 
     def __str__(self):
@@ -152,16 +157,33 @@ class Project(object):
         else:
             self._errors.append(NotImplementedError(
                 '{0} is not currently known by Progeny.'.format(self.license)))
+
         return False
 
+    def _footprint_check(self, footprint):
+        if isinstance(footprint, str):
+            return None
+        return footprint
+
+    def _find_footprint(self, language, type):
+        paths = [self._footprints_path, _footprints_lookup_dirs['alternate'],
+                 _footprints_lookup_dirs['default']]
+        footprint = None
+        if self._footprint is None:
+            for i in xrange(0, 3):
+                footprint = self._footprint_check(open_file(
+                    '{0}/{1}/{2}'.format(paths[i], self.language, self.type)))
+                if footprint is not None:
+                    return footprint
+            return None
+
+        footprint = self._footprint_check(open_file(self._footprint))
+        return footprint
+
     def generate(self):
-        try:
-            # TODO: Change me so that I honor config settings
-            footprint = open_file(
-                'footprints/{0}/{1}'.format(self.language, self.type))
-        except IOError as e:
-            print(e.message)
-            return exit(1)
+        footprint = self._find_footprint(self.language, self.type)
+        if footprint is None:
+            return False
 
         success = self._mkdir(self._app_base)
         if not success:
@@ -180,109 +202,37 @@ class Project(object):
 
         lsuccess = self._license_gen()
         if not lsuccess:
-            # TODO: Notify? Raise? We appended the error but is this
-            # a "raise-worthy" offense?
-            print(self._errors[-1])
+            print(self._errors[-1].message)
 
         rsuccess = self._readme_gen()
         if not rsuccess:
-            print(self._errors[-1])
+            print(self._errors[-1].message)
 
         return True
 
 
-def validate_template(template):
-    tmpl = open_file(template)
-    if isinstance(tmpl, str):
-        raise ValidationError(tmpl, template)
+def _check_footprint_required(args, footprint=None):
+    if footprint is not None:
+        for req in _required:
+            if not args.__contains__(req):
+                raise ValidationError(
+                    'Missing required arg \'{0}\''.format(req), req)
 
-    pre_proj = {}
-    for line in tmpl:
-        l = line.split('=')
-        key = l[0].strip().lower()
-        val = l[1].strip().lower()
-        if key in _required and val in _error_conditions:
-            raise ValidationError(
-                'Missing required attribute {0}'.format(key), template)
-        pre_proj[key] = val
-
-    name = pre_proj['name']
-    language = pre_proj['language']
-    parent = pre_proj['parent']
-
-    # TODO: No, seriously, figure out a better way than this.
-    try:
-        type = pre_proj['type']
-    except KeyError:
-        type = None
-
-    try:
-        license = pre_proj['license']
-    except KeyError:
-        license = None
-
-    try:
-        vcs = pre_proj['vcs']
-    except KeyError:
-        vcs = None
-
-    try:
-        author = pre_proj['author']
-    except KeyError:
-        author = None
-
-    try:
-        email = pre_proj['email']
-    except KeyError:
-        email = None
-
-    project = Project(name, language, parent, type, author, email, license, vcs)
-    return project
+        name = args.name
+        # TODO: Language and Parent should honor config if present
+        language = args.language
+        parent = args.parent
+        return Project(name, language, parent, footprint=footprint)
 
 
 def validate_args(args):
+    # TODO: We have the footprint case, now we need the missing footprint one.
     print(args)
     print(args.name)
-    if args.template and args.template not in _error_conditions:
-        return validate_template(args.template)
-
-    for req in _required:
-        if not args.__contains__(req):
-            raise ValidationError(
-                'Missing required arg \'{0}\''.format(req), req)
-
-    name = args.name
-    language = args.language
-    parent = args.parent
-
-    # TODO: Make a loop out of this (DRY)
-    try:
-        type = args.type
-    except (AttributeError, IndexError):
-        type = None
-
-    try:
-        license = args.license
-    except (AttributeError, IndexError):
-        license = None
-
-    try:
-        vcs = args.vcs
-    except (AttributeError, IndexError):
-        vcs = None
-
-    try:
-        author = args.author
-    except (AttributeError, IndexError):
-        author = None
-
-    try:
-        email = args.email
-    except (AttributeError, IndexError):
-        email = None
-
-    project = Project(name, language, parent, type, author, email, license, vcs)
-    return project
+    if args.footprint and args.footprint not in _error_conditions:
+        footprint = open_file(args.footprint)
+        if footprint is not None:
+            return _check_footprint_required(args, footprint=footprint)
 
 
 def main():
@@ -306,9 +256,9 @@ def main():
     parser.add_argument('-p', '--parent-dir', type=str, action='store',
                         dest='parent',
                         help='The parent directory e.g. ~/projects.')
-    parser.add_argument('-f', '--template-file', type=str, action='store',
-                        dest='template',
-                        help='Generate project based on template file.')
+    parser.add_argument('-f', '--footprint', type=str, action='store',
+                        dest='footprint',
+                        help='Provide a custom footprint.')
 
     args = parser.parse_args()
     project = validate_args(args)
