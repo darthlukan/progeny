@@ -72,7 +72,7 @@ class Project(object):
     def __init__(self, name, language, parent, footprint=None, config=None,
                  type=None, author=None, email=None, license=None, vcs=None):
         self.name = name
-        self.type = type if type is not None else 'cli'
+        self.type = type
         self.license = license
         self.language = language
         self.parent = parent
@@ -223,16 +223,35 @@ def _check_footprint_required(args, footprint=None):
         language = args.language
         parent = args.parent
         return Project(name, language, parent, footprint=footprint)
+    return None
 
 
 def validate_args(args):
-    # TODO: We have the footprint case, now we need the missing footprint one.
-    print(args)
-    print(args.name)
     if args.footprint and args.footprint not in _error_conditions:
         footprint = open_file(args.footprint)
         if footprint is not None:
             return _check_footprint_required(args, footprint=footprint)
+        return None
+
+    try:
+        name = args.name
+        language = args.language
+        parent = args.parent
+        ptype = args.type
+    except AttributeError:
+        raise RuntimeError('''Progeny requires name, language, parent, and
+                              type arguments at a minimum if no footprint is
+                           supplied via the command line. You provided: {0}
+                           '''.format(args))
+
+    license = args.license if args.license not in _error_conditions else None
+    author = args.author if args.author not in _error_conditions else None
+    email = args.email if args.email not in _error_conditions else None
+    vcs = args.vcs if args.vcs not in _error_conditions else None,
+
+    return Project(name=name, language=language, parent=parent, config=__config,
+                   footprint=None, type=ptype, license=license, author=author,
+                   email=email, vcs=vcs)
 
 
 def main():
@@ -262,10 +281,11 @@ def main():
 
     args = parser.parse_args()
     project = validate_args(args)
-    project_state = project.generate()
-    print(project._errors)
-    if project_state:
-        return exit(0)
+    if project:
+        project_state = project.generate()
+        print(project._errors)
+        if project_state:
+            return exit(0)
     return exit(1)
 
 
