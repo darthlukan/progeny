@@ -83,7 +83,8 @@ class Project(object):
         self._footprint = footprint
         try:
             self._footprints_path = config.get('Paths', 'footprints')
-        except (configparser.NoSectionError, configparser.NoOptionError):
+        except (AttributeError, configparser.NoSectionError,
+                configparser.NoOptionError):
             self._footprints_path = None
         self._errors = []
 
@@ -156,7 +157,8 @@ class Project(object):
                 '{0} license response not 200.'.format(self.license)))
         else:
             self._errors.append(NotImplementedError(
-                '{0} is not currently known by Progeny.'.format(self.license)))
+                'License {0} is not currently known by Progeny.'.format(
+                    self.license)))
 
         return False
 
@@ -181,7 +183,13 @@ class Project(object):
         return footprint
 
     def generate(self):
-        footprint = self._find_footprint(self.language, self.type)
+        if self._footprint is None:
+            footprint = self._find_footprint(self.language, self.type)
+        elif isinstance(self._footprint, str):
+            footprint = open_file(self._footprint)
+        else:
+            footprint = self._footprint
+
         if footprint is None:
             return False
 
