@@ -12,13 +12,21 @@ else:
 
 def _open_config_file(HOME):
     config = configparser.SafeConfigParser()
+
     try:
-        config.read('{0}/.config/progeny/progenyrc'.format(HOME))
+        f = open('{0}/.config/progeny/progenyrc'.format(HOME))
+        config.readfp(f)
+        print('Have config first try')
     except (IOError, configparser.ParsingError):
+        print('Caught IOError')
         try:
-            config.read('{0}/.progenyrc'.format(HOME))
+            f = open('{0}/.progenyrc'.format(HOME))
+            config.readfp(f)
+            print('Have config second try')
         except (IOError, configparser.ParsingError):
+            print('Config is None')
             config = None
+    print(config.sections())
     return config
 
 
@@ -72,17 +80,61 @@ class Project(object):
     def __init__(self, name, language, parent, footprint=None, config=None,
                  type=None, author=None, email=None, license=None, vcs=None):
         self.name = name
-        self.type = type
-        self.license = license
-        self.language = language
-        self.parent = parent
-        self.author = author
-        self.email = email
-        self.vcs = vcs
+        # TODO: Refactor, this is ridiculous...
+        if type:
+            self.type = type
+        elif config:
+            self.type = config.get('Project Defaults', 'type')
+        else:
+            self.type = None
+
+        if license:
+            self.license = license
+        elif config:
+            self.license = config.get('Project Defaults', 'license')
+        else:
+            self.license = None
+
+        if language:
+            self.language = language
+        elif config:
+            self.language = config.get('Project Defaults', 'language')
+        else:
+            self.language = None
+
+        if parent:
+            self.parent = parent
+        elif config:
+            self.parent = config.get('Paths', 'parent')
+        else:
+            self.parent = None
+
+        if author:
+            self.author = author
+        elif config:
+            self.author = config.get('Project Defaults', 'author')
+        else:
+            self.author = None
+
+        if email:
+            self.email = email
+        elif config:
+            self.email = config.get('Project Defaults', 'email')
+        else:
+            self.email = None
+
+        if vcs:
+            self.vcs = vcs
+        elif config:
+            self.vcs = config.get('Project Defaults', 'vcs')
+        else:
+            self.vcs = None
+
         self._app_base = '{0}/{1}'.format(self.parent, self.name)
         self._footprint = footprint
         try:
             self._footprints_path = config.get('Paths', 'footprints')
+            print(self._footprints_path)
         except (AttributeError, configparser.NoSectionError,
                 configparser.NoOptionError):
             self._footprints_path = None
@@ -291,8 +343,10 @@ def main():
     project = validate_args(args)
     if project:
         project_state = project.generate()
+        print(project_state)
         print(project._errors)
         if project_state:
+            print('clean exit')
             return exit(0)
     return exit(1)
 
