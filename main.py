@@ -7,6 +7,10 @@ import subprocess
 
 import validators
 
+
+if os.name == 'nt':
+    sys.exit('\nWindows not supported!\n')
+
 if int(platform.python_version_tuple()[0]) == 3:
     import configparser
 else:
