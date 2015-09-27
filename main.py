@@ -38,7 +38,8 @@ _license_urls = {
     'agpl3': 'http://www.gnu.org/licenses/agpl-3.0.txt',
     'lgpl2': 'http://www.gnu.org/licenses/lgpl-2.1.txt',
     'lgpl3': 'http://www.gnu.org/licenses/lgpl-2.1.txt',
-    'wtfpl': 'http://www.wtfpl.net/txt/copying/'
+    'wtfpl': 'http://www.wtfpl.net/txt/copying/',
+    'mit': 'http://www.mit-license.org'
 }
 _footprints_lookup_dirs = {
     'default': '/usr/share/progeny/footprints',
