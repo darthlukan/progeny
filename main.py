@@ -4,6 +4,9 @@ import argparse
 import requests
 import platform
 import subprocess
+
+import validators
+
 if int(platform.python_version_tuple()[0]) == 3:
     import configparser
 else:
@@ -16,23 +19,17 @@ def _open_config_file(HOME):
     try:
         f = open('{0}/.config/progeny/progenyrc'.format(HOME))
         config.readfp(f)
-        print('Have config first try')
     except (IOError, configparser.ParsingError):
-        print('Caught IOError')
         try:
             f = open('{0}/.progenyrc'.format(HOME))
             config.readfp(f)
-            print('Have config second try')
         except (IOError, configparser.ParsingError):
-            print('Config is None')
             config = None
-    print(config.sections())
     return config
 
 
 __HOME = os.getenv('HOME')
 __config = _open_config_file(__HOME)
-print('config: {0}'.format(__config.items('Project Defaults')))
 _required = ['name', 'language', 'parent']
 _error_conditions = [None, '', 0]
 _license_urls = {
@@ -71,50 +68,19 @@ def open_file(path, mode=None):
         return e.message
 
 
-class ValidationError(BaseException):
-    def __init__(self, msg, originator):
-        self.message = '''{0} failed validation with the following reason: {1}
-        '''.format(originator, msg)
-
-
 class Project(object):
     def __init__(self, name, language, parent, footprint=None, config=None,
                  ptype=None, author=None, email=None, license=None, vcs=None):
 
         self.name = name
-        print('config: {0}'.format(config))
-
-        # TODO: This should really be in the validators....
-        if config:
-            if config.has_section('Project Defaults'):
-                if config.has_option('Project Defaults', 'type'):
-                    self.ptype = config.get('Project Defaults', 'type')
-                if config.has_option('Project Defaults', 'license'):
-                    self.license = config.get('Project Defaults', 'license')
-                if config.has_option('Project Defaults', 'language'):
-                    self.language = config.get('Project Defaults', 'language')
-                if config.has_option('Project Defaults', 'author'):
-                    self.author = config.get('Project Defaults', 'author')
-                if config.has_option('Project Defaults', 'email'):
-                    self.email = config.get('Project Defaults', 'email')
-                if config.has_option('Project Defaults', 'vcs'):
-                    self.vcs = config.get('Project Defaults', 'vcs')
-            if config.has_section('Paths'):
-                if config.has_option('Paths', 'parent'):
-                    self.parent = config.get('Paths', 'parent')
-                if config.has_option('Paths', 'footprints'):
-                    self._footprints_path = config.get('Paths', 'footprints')
-                else:
-                    self._footprints_path = None
-
-        self.ptype = ptype
-        self.license = license
         self.language = language
         self.parent = parent
+        self.config = config
+        self.ptype = ptype
         self.author = author
         self.email = email
+        self.license = license
         self.vcs = vcs
-
         self._app_base = '{0}/{1}'.format(self.parent, self.name)
         self._footprint = footprint
         self._errors = []
@@ -144,8 +110,6 @@ class Project(object):
         return True
 
     def _readme_gen(self):
-        # TODO: Is this the best way? Probably not. Profile string append
-        # versus template string -> replace to see which is fastest.
         readme_string = ''
         readme_string += '# {0}\n\n'.format(self.name)
         if self.author is not None:
@@ -251,50 +215,23 @@ class Project(object):
         return True
 
 
-def _check_footprint_required(args, footprint=None):
-    if footprint is not None:
-        for req in _required:
-            if not args.__contains__(req):
-                raise ValidationError(
-                    'Missing required arg \'{0}\''.format(req), req)
-
-        name = args.name
-        # TODO: Language and Parent should honor config if present
-        language = args.language
-        parent = args.parent
-        return Project(name, language, parent, footprint=footprint,
-                       config=__config)
-    return None
-
-
-def validate_args(args):
-    from pprint import pprint
-    pprint(args)
-    if args.footprint and args.footprint not in _error_conditions:
-        footprint = open_file(args.footprint)
-        if footprint is not None:
-            return _check_footprint_required(args, footprint=footprint)
+def validate(args):
+    valid, switches = validators.validate_args(args, __config)
+    print('valid: {0}, switches: {1}'.format(valid, switches))
+    if not valid:
         return None
+    if 'footprint' in switches.keys():
+        return Project(name=switches['name'], language=switches['language'],
+                       parent=switches['parent'], config=__config,
+                       footprint=switches['footprint'], ptype=switches['type'],
+                       author=switches['author'], email=switches['email'],
+                       license=switches['license'], vcs=switches['vcs'])
 
-    try:
-        name = args.name
-        language = args.language
-        parent = args.parent
-        ptype = args.ptype
-    except AttributeError:
-        raise RuntimeError('''Progeny requires name, language, parent, and
-                              ptype arguments at a minimum if no footprint is
-                           supplied via the command line. You provided: {0}
-                           '''.format(args))
-
-    license = args.license
-    author = args.author
-    email = args.email
-    vcs = args.vcs
-
-    return Project(name=name, language=language, parent=parent, config=__config,
-                   footprint=None, ptype=ptype, license=license, author=author,
-                   email=email, vcs=vcs)
+    return Project(name=switches['name'], language=switches['language'],
+                   parent=switches['parent'], config=__config,
+                   ptype=switches['type'], author=switches['author'],
+                   email=switches['email'], license=switches['license'],
+                   vcs=switches['vcs'])
 
 
 def main():
@@ -323,7 +260,8 @@ def main():
                         help='Provide a custom footprint.')
 
     args = parser.parse_args()
-    project = validate_args(args)
+    project = validate(args)
+    print(project)
     if project:
         project_state = project.generate()
         print(project_state)
@@ -331,6 +269,7 @@ def main():
         if project_state:
             print('clean exit')
             return exit(0)
+    print('dirty exit')
     return exit(1)
 
 
