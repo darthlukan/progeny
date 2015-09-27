@@ -21,11 +21,11 @@ def _open_config_file(HOME):
     config = configparser.SafeConfigParser()
 
     try:
-        f = open('{0}/.config/progeny/progenyrc'.format(HOME))
+        f = open(os.path.join(HOME, '.config', 'progeny', 'progenyrc'))
         config.readfp(f)
     except (IOError, configparser.ParsingError):
         try:
-            f = open('{0}/.progenyrc'.format(HOME))
+            f = open(os.path.join(HOME, '.progenyrc'))
             config.readfp(f)
         except (IOError, configparser.ParsingError):
             config = None
@@ -46,8 +46,8 @@ _license_urls = {
     'mit': 'http://www.mit-license.org'
 }
 _footprints_lookup_dirs = {
-    'default': '/usr/share/progeny/footprints',
-    'alternate': '{0}/.config/progeny/footprints'.format(__HOME),
+    'default': os.path.join('usr', 'share', 'progeny', 'footprints'),
+    'alternate': os.path.join(__HOME, '.config', 'progeny', 'footprints')
 }
 exit_states = {
     'clean': 0,
@@ -86,7 +86,7 @@ class Project(object):
         self.email = email
         self.license = license
         self.vcs = vcs
-        self._app_base = '{0}/{1}'.format(self.parent, self.name)
+        self._app_base = os.path.join(self.parent, self.name)
         self._footprint = footprint
         self._errors = []
         if self.config:
@@ -141,7 +141,7 @@ class Project(object):
             readme_string += '> Currently undecided.'
 
         try:
-            readme = open('{0}/README.md'.format(self._app_base), 'w')
+            readme = open(os.path.join(self._app_base, 'README.md'), 'w')
             readme.write(readme_string)
             readme.close()
             return True
@@ -155,7 +155,8 @@ class Project(object):
             resp = requests.get(_license_urls[self.license])
             if resp.status_code == 200:
                 try:
-                    license = open('{0}/LICENSE'.format(self._app_base), 'w')
+                    license = open(os.path.join(self._app_base, 'LICENSE'),
+                                   'w')
                     license.write(resp.text)
                     license.close()
                     return True
@@ -183,7 +184,7 @@ class Project(object):
         if self._footprint is None:
             for i in xrange(0, 3):
                 footprint = self._footprint_check(open_file(
-                    '{0}/{1}/{2}'.format(paths[i], self.language, self.ptype)))
+                    os.path.join(paths[i], self.language, self.ptype)))
                 if footprint is not None:
                     return footprint
             return None
@@ -208,7 +209,7 @@ class Project(object):
 
         for line in footprint:
             line = line.strip('\n').strip()
-            path = '{0}/{1}'.format(self._app_base, line)
+            path = os.path.join(self._app_base, line)
             if path.endswith('/'):
                 success = self._mkdir(path)
             else:
