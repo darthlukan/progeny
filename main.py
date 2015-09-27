@@ -32,6 +32,7 @@ def _open_config_file(HOME):
 
 __HOME = os.getenv('HOME')
 __config = _open_config_file(__HOME)
+print('config: {0}'.format(__config.items('Project Defaults')))
 _required = ['name', 'language', 'parent']
 _error_conditions = [None, '', 0]
 _license_urls = {
@@ -78,66 +79,44 @@ class ValidationError(BaseException):
 
 class Project(object):
     def __init__(self, name, language, parent, footprint=None, config=None,
-                 type=None, author=None, email=None, license=None, vcs=None):
+                 ptype=None, author=None, email=None, license=None, vcs=None):
+
         self.name = name
-        # TODO: Refactor, this is ridiculous...
-        if type:
-            self.type = type
-        elif config:
-            self.type = config.get('Project Defaults', 'type')
-        else:
-            self.type = None
+        print('config: {0}'.format(config))
 
-        if license:
-            self.license = license
-        elif config:
-            self.license = config.get('Project Defaults', 'license')
-        else:
-            self.license = None
+        # TODO: This should really be in the validators....
+        if config:
+            if config.has_section('Project Defaults'):
+                if config.has_option('Project Defaults', 'type'):
+                    self.ptype = config.get('Project Defaults', 'type')
+                if config.has_option('Project Defaults', 'license'):
+                    self.license = config.get('Project Defaults', 'license')
+                if config.has_option('Project Defaults', 'language'):
+                    self.language = config.get('Project Defaults', 'language')
+                if config.has_option('Project Defaults', 'author'):
+                    self.author = config.get('Project Defaults', 'author')
+                if config.has_option('Project Defaults', 'email'):
+                    self.email = config.get('Project Defaults', 'email')
+                if config.has_option('Project Defaults', 'vcs'):
+                    self.vcs = config.get('Project Defaults', 'vcs')
+            if config.has_section('Paths'):
+                if config.has_option('Paths', 'parent'):
+                    self.parent = config.get('Paths', 'parent')
+                if config.has_option('Paths', 'footprints'):
+                    self._footprints_path = config.get('Paths', 'footprints')
+                else:
+                    self._footprints_path = None
 
-        if language:
-            self.language = language
-        elif config:
-            self.language = config.get('Project Defaults', 'language')
-        else:
-            self.language = None
-
-        if parent:
-            self.parent = parent
-        elif config:
-            self.parent = config.get('Paths', 'parent')
-        else:
-            self.parent = None
-
-        if author:
-            self.author = author
-        elif config:
-            self.author = config.get('Project Defaults', 'author')
-        else:
-            self.author = None
-
-        if email:
-            self.email = email
-        elif config:
-            self.email = config.get('Project Defaults', 'email')
-        else:
-            self.email = None
-
-        if vcs:
-            self.vcs = vcs
-        elif config:
-            self.vcs = config.get('Project Defaults', 'vcs')
-        else:
-            self.vcs = None
+        self.ptype = ptype
+        self.license = license
+        self.language = language
+        self.parent = parent
+        self.author = author
+        self.email = email
+        self.vcs = vcs
 
         self._app_base = '{0}/{1}'.format(self.parent, self.name)
         self._footprint = footprint
-        try:
-            self._footprints_path = config.get('Paths', 'footprints')
-            print(self._footprints_path)
-        except (AttributeError, configparser.NoSectionError,
-                configparser.NoOptionError):
-            self._footprints_path = None
         self._errors = []
 
     def __str__(self):
@@ -195,6 +174,7 @@ class Project(object):
         return False
 
     def _license_gen(self):
+        print('License: "{0}"'.format(self.license))
         if self.license in _license_urls:
             resp = requests.get(_license_urls[self.license])
             if resp.status_code == 200:
@@ -219,14 +199,14 @@ class Project(object):
             return None
         return footprint
 
-    def _find_footprint(self, language, type):
+    def _find_footprint(self, language, ptype):
         paths = [self._footprints_path, _footprints_lookup_dirs['alternate'],
                  _footprints_lookup_dirs['default']]
         footprint = None
         if self._footprint is None:
             for i in xrange(0, 3):
                 footprint = self._footprint_check(open_file(
-                    '{0}/{1}/{2}'.format(paths[i], self.language, self.type)))
+                    '{0}/{1}/{2}'.format(paths[i], self.language, self.ptype)))
                 if footprint is not None:
                     return footprint
             return None
@@ -236,7 +216,7 @@ class Project(object):
 
     def generate(self):
         if self._footprint is None:
-            footprint = self._find_footprint(self.language, self.type)
+            footprint = self._find_footprint(self.language, self.ptype)
         elif isinstance(self._footprint, str):
             footprint = open_file(self._footprint)
         else:
@@ -282,11 +262,14 @@ def _check_footprint_required(args, footprint=None):
         # TODO: Language and Parent should honor config if present
         language = args.language
         parent = args.parent
-        return Project(name, language, parent, footprint=footprint)
+        return Project(name, language, parent, footprint=footprint,
+                       config=__config)
     return None
 
 
 def validate_args(args):
+    from pprint import pprint
+    pprint(args)
     if args.footprint and args.footprint not in _error_conditions:
         footprint = open_file(args.footprint)
         if footprint is not None:
@@ -297,20 +280,20 @@ def validate_args(args):
         name = args.name
         language = args.language
         parent = args.parent
-        ptype = args.type
+        ptype = args.ptype
     except AttributeError:
         raise RuntimeError('''Progeny requires name, language, parent, and
-                              type arguments at a minimum if no footprint is
+                              ptype arguments at a minimum if no footprint is
                            supplied via the command line. You provided: {0}
                            '''.format(args))
 
-    license = args.license if args.license not in _error_conditions else None
-    author = args.author if args.author not in _error_conditions else None
-    email = args.email if args.email not in _error_conditions else None
-    vcs = args.vcs if args.vcs not in _error_conditions else None,
+    license = args.license
+    author = args.author
+    email = args.email
+    vcs = args.vcs
 
     return Project(name=name, language=language, parent=parent, config=__config,
-                   footprint=None, type=ptype, license=license, author=author,
+                   footprint=None, ptype=ptype, license=license, author=author,
                    email=email, vcs=vcs)
 
 
@@ -322,14 +305,14 @@ def main():
                         help='Your app\'s/project\'s name.')
     parser.add_argument('-a', '--author', type=str, action='store',
                         dest='author', help='Your name.')
-    parser.add_argument('-e', '--email', type=str, action='store', dest='email',
-                        help='Your email address.')
+    parser.add_argument('-e', '--email', type=str, action='store',
+                        dest='email', help='Your email address.')
     parser.add_argument('-l', '--license', type=str, action='store',
                         dest='license', help='License shortname e.g. gpl2.')
     parser.add_argument('-lang', '--language', type=str, action='store',
                         dest='language', help='The project language.')
-    parser.add_argument('-t', '--type', type=str, action='store', dest='type',
-                        help='The type of project e.g. cli, web.')
+    parser.add_argument('-t', '--type', type=str, action='store', dest='ptype',
+                        help='The ptype of project e.g. cli, web.')
     parser.add_argument('-vcs', '--version-control-system', type=str,
                         action='store', dest='vcs', help='Version Control')
     parser.add_argument('-p', '--parent-dir', type=str, action='store',
