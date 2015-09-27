@@ -64,11 +64,9 @@ def exit(status=None):
     return sys.exit(state)
 
 
-def open_file(path, mode=None):
+def open_file(path, mode='r'):
     try:
-        if mode and isinstance(mode, str):
-            return open(path, mode)
-        return open(path, 'r')
+        return open(path, mode)
     except IOError as e:
         return e.message
 
