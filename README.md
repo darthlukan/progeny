@@ -145,7 +145,7 @@
 > The above command will define a project named "my_app3", search for a cli footprint in the python directory under one
 > of the available footprint paths and place all of this under the ~/projects directory.
 
-> For even simpler usage, please see the [progenyrc]() file which contains some options that can be set as defaults for
+> For even simpler usage, please see the [progenyrc](https://github.com/darthlukan/progeny/blob/master/progenyrc) file which contains some options that can be set as defaults for
 > Progeny. As of today (27-09-2015) Progeny's "defaulting" functionality is not yet fully implemented, you may
 > experience a few error messages if you fail to provide some options via the command line without a footprint (such as
 > type).
@@ -161,7 +161,7 @@
 ## Contributing
 
 > The great thing about Progeny is that you don't need to know how to write software in order to contribute (though, it
-> helps). The easiest way to contribute is to write footprint files and send pull requests to the [Progeny Repos](https://github.com/darthlukan/progeny-repos)
+> helps). The easiest way to contribute is to write footprint files and send pull requests to the [Progeny Footprints](https://github.com/darthlukan/progeny-footprints)
 > repository so that others can benefit from not having to write footprint files themselves. You can also test Progeny
 > and submit bug reports.
 
