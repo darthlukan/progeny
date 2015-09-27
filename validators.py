@@ -44,16 +44,13 @@ def load_config(config):
                     from_config[key] = config.get(PROJECT_DEFAULTS, key)
         if config.has_section(PATHS):
             for key in keys:
-                print('key: {0}'.format(key))
                 if config.has_option(PATHS, key):
                     from_config[key] = config.get(PATHS, key)
-                print(config.has_option(PATHS, key))
     return from_config
 
 
 def merge_configged_argged(configged, argged):
     merged = configged.copy()
-    print('before_merge_: {0}'.format(merged))
     for key in argged.keys():
         if True in [key == k for k in configged.keys()]:
             # We only care about a None val if the key exists in configged
@@ -65,13 +62,11 @@ def merge_configged_argged(configged, argged):
             # which case we definitely want to include it since that is our
             # highest priority and requires less args to generate a project
             merged[key] = argged[key]
-    print('merge_configged_argged: {0}'.format(merged))
 
     return merged
 
 
 def footprint_requires(merged):
-    print('footprint_requires: {0}'.format(merged))
     required = ['name', 'parent']
     passed = 0
     pass_requires = len(required)
@@ -98,7 +93,6 @@ def validate_args(args, config):
         configged = load_config(config)
         argged = load_args(args)
         merged = merge_configged_argged(configged, argged)
-        print('merged: {0}'.format(merged))
         # If footprint is provided, we only need name and parent
         if merged['footprint'] is not None:
             return footprint_requires(merged), merged

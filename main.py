@@ -138,7 +138,6 @@ class Project(object):
         return False
 
     def _license_gen(self):
-        print('License: "{0}"'.format(self.license))
         if self.license in _license_urls:
             resp = requests.get(_license_urls[self.license])
             if resp.status_code == 200:
@@ -217,7 +216,6 @@ class Project(object):
 
 def validate(args):
     valid, switches = validators.validate_args(args, __config)
-    print('valid: {0}, switches: {1}'.format(valid, switches))
     if not valid:
         return None
     if 'footprint' in switches.keys():
