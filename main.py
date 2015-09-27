@@ -84,6 +84,14 @@ class Project(object):
         self._app_base = '{0}/{1}'.format(self.parent, self.name)
         self._footprint = footprint
         self._errors = []
+        if self.config:
+            try:
+                self._footprints_path = config.get('Paths', 'footprints')
+            except (AttributeError, configparser.Error) as e:
+                self._errors.append(e.message)
+                self._footprints_path = None
+        else:
+            self._footprints_path = None
 
     def __str__(self):
         return self.__unicode__()
@@ -165,6 +173,7 @@ class Project(object):
     def _find_footprint(self, language, ptype):
         paths = [self._footprints_path, _footprints_lookup_dirs['alternate'],
                  _footprints_lookup_dirs['default']]
+
         footprint = None
         if self._footprint is None:
             for i in xrange(0, 3):
@@ -259,15 +268,13 @@ def main():
 
     args = parser.parse_args()
     project = validate(args)
-    print(project)
     if project:
         project_state = project.generate()
-        print(project_state)
-        print(project._errors)
         if project_state:
-            print('clean exit')
             return exit(0)
-    print('dirty exit')
+    # TODO: Error handling would help...
+    print('\nErrors were encountered, please see "progeny -h"\n')
+    print(parser.print_help())
     return exit(1)
 
 
