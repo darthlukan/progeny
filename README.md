@@ -37,12 +37,15 @@
   the user to install using the best tool for the job: their system's package manager.
 * Progeny uses "footprints" to define a project type's directory and file hierarchy. These are plain-text files that
   contain the project layout.  An example of a simple footprint for a Python CLI project is:
-  ```
+
+```
+  
     __init__.py
     main.py
     README.md
     LICENSE
-  ```
+```
+
 * Because the definition of a project is entirely up to the footprint and because Progeny is just creating file and
   directory hierarchies, Progeny is not language, framework, or type dependent.  Want to start a C project? Load up the
   appropriate footprint (or write one), pass it to Progeny and you're ready to go. In reality, it's not even limited to
@@ -68,7 +71,10 @@
 > that will work with Progeny:
 
 * Simple Python CLI:
+
+
 ```
+
     __init__.py
     main.py
     README.md
@@ -76,7 +82,9 @@
 ```
 
 * A Flask app:
+
 ```
+
     __init__.py
     app.py
     README.md
@@ -90,7 +98,10 @@
 ```
 
 * A Go web project:
+
+
 ```
+
     main.go
     routers.go
     models.go
