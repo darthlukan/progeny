@@ -9,7 +9,7 @@ import validators
 
 
 if os.name == 'nt':
-    sys.exit('\nWindows not supported!\n')
+    sys.exit('\nWindows not supported for now.\n')
 
 if int(platform.python_version_tuple()[0]) == 3:
     import configparser
@@ -275,9 +275,12 @@ def main():
                 print(error)
         if project_state:
             print('{0} was generated successfully.'.format(project.name))
+            exit()
         else:
             print('Project generation failed!')
-
+            exit(1)
+    print('Project failed validation, please review "progeny -h"')
+    parser.print_help()
     return exit(1)
 
 
