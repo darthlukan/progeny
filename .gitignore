@@ -1,4 +1,5 @@
 .git
+.ropeproject
 *.json
 *.pyc
 test_template.txt

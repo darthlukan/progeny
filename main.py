@@ -22,13 +22,14 @@ def _open_config_file(HOME):
 
     try:
         f = open(os.path.join(HOME, '.config', 'progeny', 'progenyrc'))
-        config.readfp(f)
     except (IOError, configparser.ParsingError):
         try:
             f = open(os.path.join(HOME, '.progenyrc'))
-            config.readfp(f)
         except (IOError, configparser.ParsingError):
             config = None
+
+    if config is not None:
+        config.readfp(f)
     return config
 
 
@@ -42,26 +43,19 @@ _license_urls = {
     'agpl3': 'http://www.gnu.org/licenses/agpl-3.0.txt',
     'lgpl2': 'http://www.gnu.org/licenses/lgpl-2.1.txt',
     'lgpl3': 'http://www.gnu.org/licenses/lgpl-2.1.txt',
-    'wtfpl': 'http://www.wtfpl.net/txt/copying/',
-    'mit': 'http://www.mit-license.org'
+    'wtfpl': 'http://www.wtfpl.net/txt/copying/'
 }
 _footprints_lookup_dirs = {
     'default': os.path.join('usr', 'share', 'progeny', 'footprints'),
     'alternate': os.path.join(__HOME, '.config', 'progeny', 'footprints')
 }
-exit_states = {
-    'clean': 0,
-    'error': 1
-}
 
 
 def exit(status=None):
-    if status not in _error_conditions:
-        state = exit_states['error']
-    else:
-        state = exit_states['clean']
+    if status:
+        return sys.exit(1)
 
-    return sys.exit(state)
+    return sys.exit(0)
 
 
 def open_file(path, mode='r'):
@@ -164,7 +158,7 @@ class Project(object):
                 '{0} license response not 200.'.format(self.license)))
         else:
             self._errors.append(NotImplementedError(
-                'License {0} is not currently known by Progeny.'.format(
+                'License {0} is not currently known to Progeny.'.format(
                     self.license)))
 
         return False
@@ -199,6 +193,7 @@ class Project(object):
             footprint = self._footprint
 
         if footprint is None:
+            self._errors.append(RuntimeError('No footprint found!'))
             return False
 
         success = self._mkdir(self._app_base)
@@ -274,11 +269,15 @@ def main():
     project = validate(args)
     if project:
         project_state = project.generate()
+        if len(project._errors) > 0:
+            print('The following errors were encountered while generating the project:')
+            for error in project._errors:
+                print(error)
         if project_state:
-            return exit(0)
-    # TODO: Error handling would help...
-    print('\nErrors were encountered, please see "progeny -h"\n')
-    print(parser.print_help())
+            print('{0} was generated successfully.'.format(project.name))
+        else:
+            print('Project generation failed!')
+
     return exit(1)
 
 
