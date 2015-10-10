@@ -270,7 +270,7 @@ def main():
     if project:
         project_state = project.generate()
         if len(project._errors) > 0:
-            print('The following errors were encountered while generating the project:')
+            print('The following errors were encountered:')
             for error in project._errors:
                 print(error)
         if project_state:
