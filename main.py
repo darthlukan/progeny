@@ -117,7 +117,7 @@ class Project(object):
 
     def _init_vcs(self):
         if not self._check_vcs():
-            self._errors.append(RuntimeError('VCS definition or init failure.'))
+            self._errors.append(RuntimeError('VCS init failure.'))
             return False
 
         this_dir = os.getcwd()
