@@ -2,15 +2,18 @@ import argparse
 from .. import validators
 
 
-parser = argparse.ArgumentParser()
-good_args = parser.parse_args()
+class Args(argparse.Namespace):
+    def __init__(self, *args, **kwargs):
+        super(Args, self).__init__(*args, **kwargs)
+
+good_args = Args()
 good_args.parent = 'parent'
 good_args.name = 'name'
 good_args.footprint = 'footprint'
 good_args.language = 'lang'
 good_args.type = 'type'
 
-bad_args = parser.parse_args()
+bad_args = Args()
 bad_args.name = 'name'
 bad_args.parent = 'parent'
 
@@ -40,17 +43,15 @@ def test_solo_args_requires():
 
 
 def test_footprint_requires():
-    parser = argparse.ArgumentParser()
-    good_args = parser.parse_args()
+    good_args = Args()
     good_args.name = 'name'
     good_args.parent = 'parent'
     gooder_args = validators.load_args(good_args)
     good = validators.footprint_requires(gooder_args)
     assert good is True
 
-    bad_args = parser.parse_args()
+    bad_args = Args()
     bad_args.name = 'name'
     badder_args = validators.load_args(bad_args)
     bad = validators.footprint_requires(badder_args)
     assert bad is False
-
