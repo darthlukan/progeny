@@ -96,6 +96,18 @@ class Project(object):
     def __unicode__(self):
         return unicode('<Project {0}>'.format(self.name))
 
+    def _check_vcs(self):
+        if self.vcs is None:
+            return False
+
+        v = subprocess.Popen('which {0}'.format(self.vcs), shell=True,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = v.communicate()
+        if '/' in stdout or '\\' in stdout:
+            return True
+
+        return False
+
     def _mkdir(self, path):
         d = subprocess.Popen('mkdir -p {0}'.format(path), shell=True,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
