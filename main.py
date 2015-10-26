@@ -108,6 +108,22 @@ class Project(object):
 
         return False
 
+    def _init_vcs(self):
+        if not self._check_vcs():
+            return False
+
+        this_dir = os.getcwd()
+        os.chdir(self._app_base)
+        v = subprocess.Popen('{0} init'.format(self.vcs), shell=True,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = v.communicate()
+        os.chdir(this_dir)
+        if stderr and stderr not in _error_conditions:
+            self._errors.append(OSError(stderr))
+            return False
+
+        return True
+
     def _mkdir(self, path):
         d = subprocess.Popen('mkdir -p {0}'.format(path), shell=True,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
