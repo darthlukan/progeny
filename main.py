@@ -96,13 +96,20 @@ class Project(object):
     def __unicode__(self):
         return unicode('<Project {0}>'.format(self.name))
 
+    def _syscall(self, executor):
+        p = subprocess.Popen(executor, shell=True, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        if stderr:
+            self._errors.append(OSError(stderr))
+            return False, stdout
+        return True, stdout
+
     def _check_vcs(self):
         if self.vcs is None:
             return False
 
-        v = subprocess.Popen('which {0}'.format(self.vcs), shell=True,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = v.communicate()
+        _, stdout = self._syscall('which {0}'.format(self.vcs))
         if '/' in stdout or '\\' in stdout:
             return True
 
@@ -110,36 +117,30 @@ class Project(object):
 
     def _init_vcs(self):
         if not self._check_vcs():
-            self._errors.append(RuntimeError('vcs not defined.'))
+            self._errors.append(RuntimeError('VCS definition or init failure.'))
             return False
 
         this_dir = os.getcwd()
         os.chdir(self._app_base)
-        v = subprocess.Popen('{0} init'.format(self.vcs), shell=True,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = v.communicate()
+        status, stdout = self._syscall('{0} init'.format(self.vcs))
         os.chdir(this_dir)
-        if stderr and stderr not in _error_conditions:
-            self._errors.append(OSError(stderr))
+        if not status:
+            self._errors.append(OSError(stdout))
             return False
 
         return True
 
     def _mkdir(self, path):
-        d = subprocess.Popen('mkdir -p {0}'.format(path), shell=True,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = d.communicate()
-        if stderr and stderr not in _error_conditions:
-            self._errors.append(OSError(stderr))
+        status, stdout = self._syscall('mkdir -p {0}'.format(path))
+        if not status:
+            self._errors.append(OSError(stdout))
             return False
         return True
 
     def _touch(self, file):
-        f = subprocess.Popen('touch {0}'.format(file), shell=True,
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = f.communicate()
-        if stderr and stderr not in _error_conditions:
-            self._errors.append(OSError(stderr))
+        status, stdout = self._syscall('touch {0}'.format(file))
+        if not status:
+            self._errors.append(OSError(stdout))
             return False
         return True
 
