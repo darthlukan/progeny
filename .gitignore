@@ -1,5 +1,7 @@
 .git
 .ropeproject
+.cache
+__pycache__
 *.json
 *.pyc
 test_template.txt
