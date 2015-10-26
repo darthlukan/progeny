@@ -7,3 +7,4 @@ install:
   - pip install pytest
   - pip install pytest-pep8
 script: py.test --pep8 .
+sudo: false
