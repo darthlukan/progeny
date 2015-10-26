@@ -110,6 +110,7 @@ class Project(object):
 
     def _init_vcs(self):
         if not self._check_vcs():
+            self._errors.append(RuntimeError('vcs not defined.'))
             return False
 
         this_dir = os.getcwd()
@@ -245,6 +246,10 @@ class Project(object):
 
         rsuccess = self._readme_gen()
         if not rsuccess:
+            print(self._errors[-1].message)
+
+        vsuccess = self._init_vcs()
+        if not vsuccess:
             print(self._errors[-1].message)
 
         return True
