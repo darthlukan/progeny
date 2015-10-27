@@ -7,6 +7,16 @@ import subprocess
 
 import validators
 
+try:
+    xrange_ = xrange
+except NameError:
+    xrange_ = range
+
+try:
+    unicode_ = unicode
+except NameError:
+    unicode_ = str
+
 
 if os.name == 'nt':
     sys.exit('\nWindows not supported for now.\n')
@@ -66,6 +76,7 @@ def open_file(path, mode='r'):
 
 
 class Project(object):
+
     def __init__(self, name, language, parent, footprint=None, config=None,
                  ptype=None, author=None, email=None, license=None, vcs=None):
 
@@ -94,7 +105,7 @@ class Project(object):
         return self.__unicode__()
 
     def __unicode__(self):
-        return unicode('<Project {0}>'.format(self.name))
+        return unicode_('<Project {0}>'.format(self.name))
 
     def _syscall(self, executor):
         p = subprocess.Popen(executor, shell=True, stdout=subprocess.PIPE,
@@ -204,7 +215,7 @@ class Project(object):
 
         footprint = None
         if self._footprint is None:
-            for i in xrange(0, 3):
+            for i in xrange_(0, 3):
                 footprint = self._footprint_check(open_file(
                     os.path.join(paths[i], self.language, self.ptype)))
                 if footprint is not None:
@@ -239,7 +250,7 @@ class Project(object):
                 success = self._touch(path)
 
             if not success:
-                    raise self._errors[-1]
+                raise self._errors[-1]
 
         lsuccess = self._license_gen()
         if not lsuccess:
