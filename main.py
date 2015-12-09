@@ -300,7 +300,7 @@ def main():
     parser.add_argument('-lang', '--language', type=str, action='store',
                         dest='language', help='The project language.')
     parser.add_argument('-t', '--type', type=str, action='store', dest='ptype',
-                        help='The ptype of project e.g. cli, web.')
+                        help='The type of project e.g. cli, web.')
     parser.add_argument('-vcs', '--version-control-system', type=str,
                         action='store', dest='vcs', help='Version Control')
     parser.add_argument('-p', '--parent-dir', type=str, action='store',
