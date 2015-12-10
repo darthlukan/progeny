@@ -121,15 +121,21 @@ class Project(object):
             return False
 
         _, stdout = self._syscall('which {0}'.format(self.vcs))
-        if '/' in stdout or '\\' in stdout:
-            return True
+        if not self.vcs:
+            return False
+        else:
+            if b'/' in stdout or '\\' in stdout:
+                return True
 
         return False
 
     def _init_vcs(self):
-        if not self._check_vcs():
-            self._errors.append(RuntimeError('VCS init failure.'))
-            return False
+        if not self.vcs:
+            return True
+        else:
+            if not self._check_vcs():
+                self._errors.append(RuntimeError('VCS init failure.'))
+                return False
 
         this_dir = os.getcwd()
         os.chdir(self._app_base)
@@ -262,8 +268,10 @@ class Project(object):
 
         vsuccess = self._init_vcs()
         if not vsuccess:
-            print(self._errors[-1].message)
-
+            try:
+                print(self._errors[-1].message)
+            except AttributeError:
+                print(self._errors[-1])
         return True
 
 
